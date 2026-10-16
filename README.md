@@ -8,17 +8,43 @@ login-and-add-to-cart walkthrough.
 **29 tests, 6 spec files, 6 parallel workers, ~27s.** Target:
 [the-internet.herokuapp.com](https://the-internet.herokuapp.com).
 
+## Prerequisites
+
+| Requirement | Notes |
+|---|---|
+| **Node.js 22** | pinned in `.nvmrc`. WebdriverIO 9 dependencies require ≥ 20.18.1 — on 20.11 the install warns `EBADENGINE` and can fail at runtime |
+| **Chrome** | WebdriverIO 9 downloads a matching Chrome for Testing and driver automatically; nothing to install by hand |
+| **Network access** | `the-internet.herokuapp.com` |
+| **Allure CLI** | only for `npm run report`; the suite itself just writes `allure-results/` |
+
+No Docker, no local services, no seeded database.
+
+## Setup
+
 ```bash
-nvm use            # Node 22 — WebdriverIO 9 deps require >= 20.18.1
-npm ci
-npm test           # everything, headless, 5 workers
-npm run test:smoke # authentication only
-npm run test:headed
-npm run typecheck
-npm run report     # Allure
+nvm use     # or: nvm install 22
+npm ci      # exact lockfile install
 ```
 
-No Docker, no local services, no seeded database. Clone and run.
+## Running
+
+```bash
+npm test              # all 6 specs, headless, 5 parallel workers
+npm run test:smoke    # authentication only
+npm run test:frames   # iframes
+npm run test:dynamic  # late rendering and delayed controls
+npm run test:files    # upload
+npm run typecheck     # tsc --noEmit, strict
+
+npm run test:headed   # watch it run
+npm run report        # generate and open the Allure report
+```
+
+A single spec:
+
+```bash
+npx wdio run ./config/wdio.conf.ts --spec test/specs/frames.spec.ts
+```
 
 ## Layout
 
