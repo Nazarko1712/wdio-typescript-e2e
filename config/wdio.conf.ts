@@ -68,7 +68,7 @@ export const config: WebdriverIO.Config = {
              * "ignore" leaves dialogs open so the test owns them explicitly,
              * which is what any suite that asserts on alerts needs.
              */
-            'unhandledPromptBehavior': 'ignore',
+            unhandledPromptBehavior: 'ignore',
         },
     ],
 

@@ -28,6 +28,11 @@ describe('Iframes', () => {
         // This is the guarantee the finally block exists for: a failing
         // assertion inside a frame must not leave the next test stranded.
         await expect(
+            // The `async` is load-bearing here: `inEditor` takes a
+            // `() => Promise<T>`, and a synchronous throw would escape before
+            // the try/finally is entered, so the frame context would never be
+            // restored. That is the exact behaviour under test.
+            // eslint-disable-next-line @typescript-eslint/require-await
             FramesPage.inEditor(async () => {
                 throw new Error('simulated failure inside the frame');
             }),
@@ -40,20 +45,20 @@ describe('Iframes', () => {
     it('handles nested frames by switching one level at a time', async () => {
         await browser.url('/nested_frames');
 
-        const topFrame = await $('frame[name="frame-top"]');
+        const topFrame = await $('frame[name="frame-top"]').getElement();
         await browser.switchFrame(topFrame);
         try {
             // Inside frame-top there are three more frames: left, middle, right.
-            const middle = await $('frame[name="frame-middle"]');
+            const middle = await $('frame[name="frame-middle"]').getElement();
             await browser.switchFrame(middle);
             try {
                 expect(await $('#content').getText()).toBe('MIDDLE');
             } finally {
                 await browser.switchFrame(null);
-                await browser.switchFrame(await $('frame[name="frame-top"]'));
+                await browser.switchFrame(await $('frame[name="frame-top"]').getElement());
             }
 
-            const left = await $('frame[name="frame-left"]');
+            const left = await $('frame[name="frame-left"]').getElement();
             await browser.switchFrame(left);
             try {
                 expect(await $('body').getText()).toBe('LEFT');

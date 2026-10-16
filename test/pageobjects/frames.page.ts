@@ -35,7 +35,7 @@ class FramesPage extends BasePage {
      */
     async inEditor<T>(action: () => Promise<T>): Promise<T> {
         await this.editorFrame.waitForExist({ timeout: 10_000 });
-        await browser.switchFrame(await this.editorFrame);
+        await browser.switchFrame(await this.editorFrame.getElement());
         try {
             return await action();
         } finally {
@@ -56,10 +56,13 @@ class FramesPage extends BasePage {
         await this.inEditor(async () => {
             await this.editorBody.waitForDisplayed({ timeout: 10_000 });
 
-            const body = await this.editorBody;
-            await browser.execute((el: HTMLElement) => {
-                el.innerHTML = '';
-            }, body as unknown as HTMLElement);
+            const body = await this.editorBody.getElement();
+            await browser.execute(
+                (el: HTMLElement) => {
+                    el.innerHTML = '';
+                },
+                body as unknown as HTMLElement,
+            );
 
             await body.click();
             await browser.keys(text);

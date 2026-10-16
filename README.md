@@ -10,12 +10,12 @@ login-and-add-to-cart walkthrough.
 
 ## Prerequisites
 
-| Requirement | Notes |
-|---|---|
-| **Node.js 22** | pinned in `.nvmrc`. WebdriverIO 9 dependencies require ≥ 20.18.1 — on 20.11 the install warns `EBADENGINE` and can fail at runtime |
-| **Chrome** | WebdriverIO 9 downloads a matching Chrome for Testing and driver automatically; nothing to install by hand |
-| **Network access** | `the-internet.herokuapp.com` |
-| **Allure CLI** | only for `npm run report`; the suite itself just writes `allure-results/` |
+| Requirement        | Notes                                                                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Node.js 22**     | pinned in `.nvmrc`. WebdriverIO 9 dependencies require ≥ 20.18.1 — on 20.11 the install warns `EBADENGINE` and can fail at runtime |
+| **Chrome**         | WebdriverIO 9 downloads a matching Chrome for Testing and driver automatically; nothing to install by hand                         |
+| **Network access** | `the-internet.herokuapp.com`                                                                                                       |
+| **Allure CLI**     | only for `npm run report`; the suite itself just writes `allure-results/`                                                          |
 
 No Docker, no local services, no seeded database.
 
@@ -80,14 +80,14 @@ test/data/credentials.ts   env-overridable, never hard-coded in a spec
 
 ## Coverage
 
-| Spec | Tests | Pattern |
-|---|---|---|
-| `login` | 5 | auth flow, negative cases, **user enumeration** |
-| `frames` | 5 | iframe context, nested frames, context restoration |
-| `dynamic-loading` | 6 | late-injected elements, disabled controls, stale snapshots |
-| `hovers` | 4 | exists-vs-displayed, hover-gated content |
-| `file-transfer` | 4 | upload, unicode names, large files, empty submit |
-| `shadow-dom` | 5 | shadow boundaries, `shadow$`, deep selectors |
+| Spec              | Tests | Pattern                                                    |
+| ----------------- | ----- | ---------------------------------------------------------- |
+| `login`           | 5     | auth flow, negative cases, **user enumeration**            |
+| `frames`          | 5     | iframe context, nested frames, context restoration         |
+| `dynamic-loading` | 6     | late-injected elements, disabled controls, stale snapshots |
+| `hovers`          | 4     | exists-vs-displayed, hover-gated content                   |
+| `file-transfer`   | 4     | upload, unicode names, large files, empty submit           |
+| `shadow-dom`      | 5     | shadow boundaries, `shadow$`, deep selectors               |
 
 ## Conventions, and why
 
@@ -96,7 +96,7 @@ on every access, so an element reference cannot be a snapshot taken earlier in
 the test. Markup changes are fixed in one place.
 
 **Page objects expose actions and queries, never assertions.** The page object
-describes what *can be done*; the expectation belongs to the test. A shared
+describes what _can be done_; the expectation belongs to the test. A shared
 object that asserts starts dictating what every test must believe.
 
 **Every wait is explicit and on a condition.** There is no implicit wait
@@ -133,7 +133,7 @@ string. Working combination: clear the DOM directly, focus, send real keystrokes
 
 Element lookups are scoped to the current frame, and the context stays switched
 until moved back. The classic bug is a test that enters a frame, passes, and
-leaves the context there — the *next* test then fails looking for a top-level
+leaves the context there — the _next_ test then fails looking for a top-level
 element that is plainly present. Every frame helper here restores the context in
 `finally`, and `frames.spec.ts` has a test that throws inside a frame on purpose
 to prove the guarantee holds.
@@ -182,7 +182,7 @@ asserts the current behaviour so it stays honest, and documents the finding.
 ChromeDriver 155 handles the dialog within the `click()` command regardless of
 `unhandledPromptBehavior: 'ignore'` — verified by dumping the negotiated session
 capabilities and confirming the page-side handler had already run while
-`getAlertText()` reported *no such alert*. The behaviour is non-deterministic:
+`getAlertText()` reported _no such alert_. The behaviour is non-deterministic:
 the same spec passed one run and failed the next, in both headless and headed
 mode.
 
@@ -206,3 +206,65 @@ though the surrounding test code runs in Node.
 
 `specFileRetries` is CI-only. Locally a flake should be seen and fixed, not
 silently retried.
+
+## Linting and reports
+
+```bash
+npm run lint          # ESLint 9, flat config, type-checked rules
+npm run lint:fix
+npm run format        # Prettier, writes
+npm run format:check  # Prettier, reports (this is what CI runs)
+npm run typecheck     # tsc --noEmit
+npm run report        # generate and open the Allure report
+```
+
+| Rule                | What it catches                                                                                                             |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `wdio/await-expect` | a missing `await` on an `expect-webdriverio` assertion leaves a pending Promise and the test passes having asserted nothing |
+| `wdio/no-pause`     | `browser.pause(3000)` instead of `waitUntil` — slower on a fast machine and still flaky on a slow one                       |
+| `wdio/no-debug`     | a leftover `browser.debug()` blocks CI until the job timeout                                                                |
+
+### `await $(...)` is unnecessary in WebdriverIO 9, and the types say so
+
+Fifteen `await-thenable` errors turned out to be one fact.
+`ChainablePromiseElement` no longer extends `Promise` in v9, so `await $('x')` is
+statically an await of a non-thenable: it works at runtime (the object really
+does have a `then`), but the resulting type is the chainable, not the element.
+
+For `$$` that is not merely cosmetic. `ChainablePromiseArray.length` is typed
+`Promise<number>`, so:
+
+```ts
+const items = await $$('li');
+expect(items.length).toBeGreaterThan(0); // comparing a Promise, statically
+```
+
+v9's answer is explicit accessors, and the whole suite now uses them:
+
+```ts
+const host = await $('my-paragraph').getElement(); // WebdriverIO.Element
+const items = await $$('>>> li').getElements(); // ElementArray, real .length
+```
+
+One `require-await` disable remains, in `frames.spec.ts`, with its reason: the
+`async` on the callback passed to `inEditor` is load-bearing, because a
+synchronous throw would escape before the `try/finally` is entered and the frame
+context would never be restored — which is the exact behaviour that test asserts.
+
+### Reports
+
+Allure, via `@wdio/allure-reporter`: `npm run report` generates and opens it.
+Allure rather than a bare spec reporter because this suite's value is in the
+_documented findings_, and Allure attaches a screenshot and the step breakdown to
+each one.
+
+### Where this runs in CI
+
+Linting and formatting are their **own job**, not steps inside the test job.
+They need no browser, no network and no secrets, and they finish in seconds, so
+as a separate job they run concurrently with the suite: a formatting failure
+does not wait behind a long test run, and a real test failure is not hidden
+behind a formatting failure. Both verdicts arrive on their own.
+
+CI runs the `--check` variants, never the formatter itself. A pipeline reports
+on the branch it was asked to verify; it does not rewrite it.

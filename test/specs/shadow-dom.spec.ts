@@ -28,7 +28,7 @@ describe('Shadow DOM', () => {
     });
 
     it('an ordinary selector already pierces the shadow root in WDIO 9', async () => {
-        const host = await $('my-paragraph');
+        const host = await $('my-paragraph').getElement();
         await expect(host).toBeExisting();
 
         // The slot lives in the SHADOW tree. Under WebdriverIO 8 or raw
@@ -40,14 +40,14 @@ describe('Shadow DOM', () => {
     });
 
     it('reaches shadow content with shadow$', async () => {
-        const host = await $('my-paragraph');
-        const slot = await host.shadow$('slot[name="my-text"]');
+        const host = await $('my-paragraph').getElement();
+        const slot = await host.shadow$('slot[name="my-text"]').getElement();
 
         await expect(slot).toBeExisting();
     });
 
     it('reaches shadow content with the deep selector', async () => {
-        const deep = await $('>>> slot[name="my-text"]');
+        const deep = await $('>>> slot[name="my-text"]').getElement();
 
         await expect(deep).toBeExisting();
     });
@@ -55,7 +55,7 @@ describe('Shadow DOM', () => {
     it('reads slotted light-DOM text projected into the shadow tree', async () => {
         // Slotted content is authored in the LIGHT dom and merely rendered
         // through the shadow tree, so it stays reachable from the top level.
-        const hosts = await $$('my-paragraph');
+        const hosts = await $$('my-paragraph').getElements();
         expect(hosts.length).toBeGreaterThan(0);
 
         const text = await hosts[0]!.getText();
@@ -63,7 +63,7 @@ describe('Shadow DOM', () => {
     });
 
     it('finds list items rendered inside the shadow tree', async () => {
-        const items = await $$('>>> li');
+        const items = await $$('>>> li').getElements();
 
         expect(items.length).toBeGreaterThan(0);
     });

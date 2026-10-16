@@ -23,14 +23,14 @@ describe('Dynamic rendering', () => {
         // $$ resolves immediately against the current DOM. Taken here it is an
         // empty array, and it stays empty no matter what renders afterwards —
         // the exact bug that produces "cannot read properties of undefined".
-        const before = await $$('#finish');
+        const before = await $$('#finish').getElements();
         expect(before).toHaveLength(0);
 
         await dynamicPage.start();
         await dynamicPage.waitForResult();
 
         // Re-querying is what returns the node. The old snapshot is not updated.
-        const after = await $$('#finish');
+        const after = await $$('#finish').getElements();
         expect(after).toHaveLength(1);
         expect(before).toHaveLength(0);
     });
