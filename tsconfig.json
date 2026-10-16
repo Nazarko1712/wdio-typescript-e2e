@@ -1,0 +1,33 @@
+{
+  "extends": "@tsconfig/node20/tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+
+    // DOM is needed because `browser.execute` callbacks run IN the page, so they
+    // legitimately reference HTMLElement, document and friends — even though
+    // the surrounding test code runs in Node.
+    "lib": ["ES2022", "DOM"],
+    "types": ["node", "@wdio/globals/types", "@wdio/mocha-framework"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@pages/*": ["test/pageobjects/*"],
+      "@data/*": ["test/data/*"]
+    }
+  },
+  "include": ["test/**/*.ts", "config/**/*.ts"]
+}
