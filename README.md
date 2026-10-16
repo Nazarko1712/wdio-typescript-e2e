@@ -28,22 +28,39 @@ npm ci      # exact lockfile install
 
 ## Running
 
+**Headless** — the default, and what CI runs:
+
 ```bash
-npm test              # all 6 specs, headless, 5 parallel workers
+npm test              # all 6 specs, 5 parallel workers
 npm run test:smoke    # authentication only
 npm run test:frames   # iframes
 npm run test:dynamic  # late rendering and delayed controls
 npm run test:files    # upload
-npm run typecheck     # tsc --noEmit, strict
-
-npm run test:headed   # watch it run
-npm run report        # generate and open the Allure report
 ```
 
-A single spec:
+**Headed** — watch the browser:
+
+```bash
+npm run test:headed   # all specs, visible browser
+HEADED=1 npx wdio run ./config/wdio.conf.ts --suite smoke
+```
+
+Headedness is driven by the `HEADED` environment variable rather than a CLI
+flag: it controls `--headless=new` in `goog:chromeOptions`, which is a browser
+launch argument and therefore belongs to the capability, not to the runner.
+
+A single spec, either mode:
 
 ```bash
 npx wdio run ./config/wdio.conf.ts --spec test/specs/frames.spec.ts
+HEADED=1 npx wdio run ./config/wdio.conf.ts --spec test/specs/hovers.spec.ts
+```
+
+Other:
+
+```bash
+npm run typecheck     # tsc --noEmit, strict
+npm run report        # generate and open the Allure report
 ```
 
 ## Layout
